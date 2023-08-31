@@ -1,4 +1,4 @@
-# ESP-Relay-Portal-Arduino
+# ESP-Temp-Sensor-Portal
 
 WiFi термометр на ESP-01/ESP-01s.
 
