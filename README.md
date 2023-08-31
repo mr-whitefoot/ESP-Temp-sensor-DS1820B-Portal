@@ -33,7 +33,7 @@ WiFi термометр на ESP-01/ESP-01s.
 
 
 ### Обновление прошивки через портал:
-- Скачать [последнюю версию прошивки](https://github.com/mr-whitefoot/ESP-Relay-Portal-Arduino/releases/latest);
+- Скачать [последнюю версию прошивки](https://github.com/mr-whitefoot/ESP-Temp-sensor-DS1820B-Portal/releases/latest);
 - Перейти на портале устройства Configuration -> Firmware upgrade;
 - Нажать кнопку OTA firmware;
 - Выбрать скачанный bin файл;
