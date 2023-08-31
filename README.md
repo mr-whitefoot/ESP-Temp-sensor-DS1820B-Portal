@@ -12,8 +12,7 @@ WiFi термометр на ESP-01/ESP-01s.
 
 
 ### Интерфейс web портала:
-
-<img width="356" alt="image" src="https://github.com/mr-whitefoot/ESP-Temp-sensor-DS1820B-Portal/assets/16363451/1cea2b00-403b-4d30-aa80-f124ac16d3e6">
+<img width="374" alt="image" src="https://github.com/mr-whitefoot/ESP-Temp-sensor-DS1820B-Portal/assets/16363451/a8b08b90-9e7b-4221-87ef-3d2ca3ec5cba">
 
 Выбор настроек<br>
 <img width="401" alt="image" src="https://github.com/mr-whitefoot/ESP-Relay-Portal/assets/16363451/f3f8e971-b77e-4998-bc1a-49f401978e52">
