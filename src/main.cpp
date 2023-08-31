@@ -6,11 +6,11 @@
 #include <DS18B20.h>
 
 
-String version = "0.0.18";
+String version = "0.0.25";
 #define LIGHT_THEME 0
 #define DARK_THEME 1
-#define ONE_WIRE_BUS 2 //Для ESP01
-//#define ONE_WIRE_BUS D2 //Для wemos mini
+//#define ONE_WIRE_BUS 2 //Для ESP01
+#define ONE_WIRE_BUS D2 //Для wemos mini
 
 struct Data {
   //Data

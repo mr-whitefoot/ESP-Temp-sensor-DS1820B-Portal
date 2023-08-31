@@ -36,30 +36,42 @@ void mqttStart(){
 
 void sensorRead(){
   float temperature_array[9];
-  int array_size = sizeof(temperature_array);
+  int array_size = sizeof(temperature_array)/sizeof(temperature_array[0]);
+
+  print("Array[");
   for(int i = 0; i < array_size ; i++){
     sensor.requestTemperatures();
-    while (!sensor.isConversionComplete())
-      ; // wait until sensor is ready
-    temperature_array[i]= sensor.getTempC();
+    while (!sensor.isConversionComplete()); // wait until sensor is ready
+    temperature_array[i] = sensor.getTempC();
+    if(i != 0){ print(", ");}
+    print(String(temperature_array[i]));
+  }
+  println("]");
+
+
+  //Отсортируем массив
+  for (int j = 0; j < array_size; j++) {
+    float temp_value = temperature_array[j];
+    int index = j;
+    for (int i = j + 1; i < array_size; i++) {
+      if (temp_value > temperature_array[i]) {
+        temp_value = temperature_array[i];
+        index = i;
+      }
+    } 
+    temperature_array[index] = temperature_array[j];
+    temperature_array[j] = temp_value;
   }
 
-//Отсортируем массив
-for (int j = 0; j < array_size; j++) {
-  int temp_value = temperature_array[j];
-  int index = j;
-  for (int i = j + 1; i < array_size; i++) {
-    if (temp_value > temperature_array[i]) {
-      temp_value = temperature_array[i];
-      index = i;
-    }
-  } 
-  temperature_array[index] = temperature_array[j];
-  temperature_array[j] = temp_value;
-}
+  print("Sorted array[");
+  for(int i = 0; i < array_size ; i++){
+    if(i != 0){ print(", ");}
+    print(String(temperature_array[i]));
+  }
+  println("]"); 
 
   temperature = temperature_array[4];
-  print(F("Temperature: "));
+  print(F("Temperature mean: "));
   print(temperature);
   println(F("°C"));
 }
