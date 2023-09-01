@@ -35,45 +35,57 @@ void mqttStart(){
 }
 
 void sensorRead(){
-  float temperature_array[9];
+  sensor.requestTemperatures();
+  while (!sensor.isConversionComplete()); // wait until sensor is ready
+  float temp_now = sensor.getTempC();
+
+  println(F("-----------------------------------------------------------------------"));
+  println("Temperature now:"+String(temp_now));
+
   int array_size = sizeof(temperature_array)/sizeof(temperature_array[0]);
 
   print("Array[");
-  for(int i = 0; i < array_size ; i++){
-    sensor.requestTemperatures();
-    while (!sensor.isConversionComplete()); // wait until sensor is ready
-    temperature_array[i] = sensor.getTempC();
-    if(i != 0){ print(", ");}
-    print(String(temperature_array[i]));
-  }
-  println("]");
-
-
-  //Отсортируем массив
-  for (int j = 0; j < array_size; j++) {
-    float temp_value = temperature_array[j];
-    int index = j;
-    for (int i = j + 1; i < array_size; i++) {
-      if (temp_value > temperature_array[i]) {
-        temp_value = temperature_array[i];
-        index = i;
-      }
-    } 
-    temperature_array[index] = temperature_array[j];
-    temperature_array[j] = temp_value;
-  }
-
-  print("Sorted array[");
   for(int i = 0; i < array_size ; i++){
     if(i != 0){ print(", ");}
     print(String(temperature_array[i]));
   }
   println("]"); 
 
-  temperature = temperature_array[4];
-  print(F("Temperature mean: "));
+  if (temperature_array[array_size - 1] <= temp_now){
+    for(int i = 1; i < array_size; i++){
+      temperature_array[i-1] = temperature_array[i];
+    }
+    temperature_array[array_size - 1] = temp_now;
+  }else{
+    for(int i = 0; i < array_size; i++){
+      if ( temperature_array[i] > temp_now ){
+        for(int j = array_size - 1 ; j > i; j--){
+          temperature_array[j-1] = temperature_array[j];
+        }
+        temperature_array[i] = temp_now;
+        break;
+      }
+    }
+  }
+
+
+  print("Array after insert[");
+  for(int i = 0; i < array_size ; i++){
+    if(i != 0){ print(", ");}
+    print(String(temperature_array[i]));
+  }
+  println("]"); 
+
+  if (temperature_array[4]!= NULL){
+    temperature = temperature_array[4];
+    print(F("Temperature mean: "));
+  } else {
+    temperature = temp_now;
+    print(F("Temperature now:"));
+  }
   print(temperature);
   println(F("°C"));
+  println(F("-----------------------------------------------------------------------"));
 }
 
 void sensorSetTimer(){

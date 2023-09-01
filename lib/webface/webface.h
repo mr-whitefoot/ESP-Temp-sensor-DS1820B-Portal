@@ -255,7 +255,7 @@ void portalUpdate(){
     String wifiStrength = String(strength)+"%";
     portal.updateString("signal", wifiStrength);
 
-    portal.updateFloat("temperature", temperature, 2 );
+    portal.updateFloat("temperature", temperature, 1 );
 
     portal.updateInt("mqttStatusLed",mqttClient.isConnected());
     String ipAdress = WiFi.localIP().toString();

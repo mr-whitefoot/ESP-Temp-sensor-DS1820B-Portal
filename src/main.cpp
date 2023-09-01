@@ -6,7 +6,7 @@
 #include <DS18B20.h>
 
 
-String version = "0.0.25";
+String version = "0.0.33";
 #define LIGHT_THEME 0
 #define DARK_THEME 1
 #define ONE_WIRE_BUS 2 //Для ESP01
@@ -47,8 +47,10 @@ EEManager memory(data);
 GPlog glog("log");
 WiFiEventHandler onSoftAPModeStationConnected, onSoftAPModeStationDisconnected, onStationModeConnected;
 float temperature;
+float temperature_array[9];
 OneWire oneWire(ONE_WIRE_BUS);
 DS18B20 sensor(&oneWire);
+
 
 struct Form{
   const char* root = "/";
