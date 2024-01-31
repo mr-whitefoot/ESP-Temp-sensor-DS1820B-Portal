@@ -28,8 +28,8 @@ void wifiApStaTimerHandler(){
 
 void mqttStart(){
   println("Starting MQTT"); 
-  mqttClient.setMqttServer(data.mqttServerIp, data.mqttUsername, data.mqttPassword, data.mqttServerPort );
-  mqttClient.setMqttClientName(data.device_name);
+  mqttClient.setMqttServer(data.mqtt.mqttServerIp, data.mqtt.mqttUsername, data.mqtt.mqttPassword, data.mqtt.mqttServerPort );
+  mqttClient.setMqttClientName(data.sensor.device_name);
     //Setup max lingth of message MQTT
   mqttClient.setMaxPacketSize(1000);
 }
@@ -40,7 +40,9 @@ void sensorRead(){
   float temp_now = sensor.getTempC();
 
   println(F("-----------------------------------------------------------------------"));
-  println("Temperature now:"+String(temp_now));
+  println("Temperature now: "+String(temp_now));
+  print("Sensor_resolution: ");
+  println(sensor.getResolution());
 
   int array_size = sizeof(temperature_array)/sizeof(temperature_array[0]);
 
@@ -60,14 +62,13 @@ void sensorRead(){
     for(int i = 0; i < array_size; i++){
       if ( temperature_array[i] > temp_now ){
         for(int j = array_size - 1 ; j > i; j--){
-          temperature_array[j-1] = temperature_array[j];
+          temperature_array[j] = temperature_array[j-1];
         }
         temperature_array[i] = temp_now;
         break;
       }
     }
   }
-
 
   print("Array after insert[");
   for(int i = 0; i < array_size ; i++){
@@ -90,7 +91,7 @@ void sensorRead(){
 
 void sensorSetTimer(){
   sensorTimer.stop();
-  sensorTimer.setTime(data.sensorRefreshTime*1000);
+  sensorTimer.setTime(data.sensor.sensorRefreshTime*1000);
   sensorTimer.attach(sensorRead);
   sensorTimer.start();
 }
@@ -101,11 +102,29 @@ void sensorInit(){
   print("DS18B20 Library version: ");
   println(DS18B20_LIB_VERSION);
   sensor.begin();
-  println("Sensor update timer "+data.sensorRefreshTime*1000);
+  sensor.setResolution(12);
+  println("Sensor update timer "+data.sensor.sensorRefreshTime*1000);
   sensorSetTimer();
   println(F("-------------------------------"));
 }
 
+void convertStringToMAC( const char* stringMAC, uint8_t bytesMAC[6] ){
+  int values[6];
+  int i;
+
+  if (6 == sscanf(stringMAC, "%x:%x:%x:%x:%x:%x%*c",
+                  &values[0], &values[1], &values[2],
+                  &values[3], &values[4], &values[5]))
+  {
+    /* convert to uint8_t */
+    for (i = 0; i < 6; ++i)
+      bytesMAC[i] = (uint8_t)values[i];
+  }
+  else
+  {
+    /* invalid mac */
+  };
+}
 
 void startup(){
   Serial.begin(9600);
@@ -123,7 +142,7 @@ void startup(){
 
   // Connecting WiFi
   println("Initialize WiFi");
-  if (data.factoryReset == true || data.wifiAP == true ) {
+  if (data.params.factoryReset == true || data.params.wifiAP == true ) {
     wifiAp();
   } else {
     wifiConnect();
@@ -133,15 +152,15 @@ void startup(){
   println("Starting OTA updates");
   ArduinoOTA.begin();
 
-  if (data.factoryReset==false){    
+  if (data.params.factoryReset==false){    
     //MQTT
     mqttStart();
   
     // MQTT timers
     println("Starting MQTT timers");
-    MessageTimer.setTime(data.status_delay*1000);
+    MessageTimer.setTime(data.mqtt.status_period*1000);
     MessageTimer.start();
-    ServiceMessageTimer.setTime(data.avaible_delay*1000);
+    ServiceMessageTimer.setTime(data.mqtt.avaible_period*1000);
     ServiceMessageTimer.start();
   }
   
@@ -149,6 +168,14 @@ void startup(){
   println("Starting WiFiAP timer");
   wifiApStaTimer.setTime(WIFIAPTIMER);
   wifiApStaTimer.attach(wifiApStaTimerHandler);
+
+  //ESP NOW
+  println("Starting ESP NOW");
+  if (esp_now_init() != 0 ) {
+    println("Error initializing ESP-NOW");
+    restart();
+  };
+
 
   println("Boot complete");
   println("-------------------------------");
@@ -160,53 +187,54 @@ void portalStart(){
   portal.disableAuth();
   portal.attach(portalAction);
   portal.OTA.attachUpdateBuild(OTAbuild);
-  portal.start(data.device_name);
+  portal.start(data.sensor.device_name);
   portal.enableOTA();
 }
 
 void wifiAp(){
   println("Create AP");
 
-  String ssid = data.device_name;
-  ssid += "AP";
+  String ssid = data.sensor.device_name;
+  ssid += "_AP";
   WiFi.mode(WIFI_AP);
-  onSoftAPModeStationConnected = WiFi.onSoftAPModeStationConnected([](const WiFiEventSoftAPModeStationConnected& event)
-  {
-    portalStart();
-  });
-
-  onSoftAPModeStationDisconnected = WiFi.onSoftAPModeStationDisconnected([](const WiFiEventSoftAPModeStationDisconnected& event){
-    data.wifiAP = false;
-    memory.updateNow();
-    WiFiApTimer.stop();
-  });
 
   WiFi.softAP(ssid);
   IPAddress ip = WiFi.softAPIP();
   print("AP IP address: ");
   println(ip.toString());
 
-  data.wifiConnectTry = 0;
+  data.params.wifiConnectTry = 0;
   memory.updateNow();
 
   WiFiApTimer.setTime(WIFIAPTIMER);
   WiFiApTimer.setTimerMode();
   WiFiApTimer.attach(restart);
   WiFiApTimer.start();
+
+  onSoftAPModeStationConnected = WiFi.onSoftAPModeStationConnected([](const WiFiEventSoftAPModeStationConnected& event)
+  {
+    portalStart();
+  });
+
+  onSoftAPModeStationDisconnected = WiFi.onSoftAPModeStationDisconnected([](const WiFiEventSoftAPModeStationDisconnected& event){
+    data.params.wifiAP = false;
+    memory.updateNow();
+    WiFiApTimer.stop();
+  });
 }
 
 void wifiConnect(){
-  WiFi.mode(WIFI_AP_STA);
-  WiFi.hostname(data.device_name);
+  WiFi.mode(WIFI_STA);
+  WiFi.hostname(data.sensor.device_name);
 
- onStationModeConnected = WiFi.onStationModeConnected([](const WiFiEventStationModeConnected& event)
+  onStationModeConnected = WiFi.onStationModeConnected([](const WiFiEventStationModeConnected& event)
   {
     portalStart();
     wifiApStaTimer.start();
   });
 
   println("Wifi connecting...");
-  WiFi.begin(data.ssid, data.password);
+  WiFi.begin(data.wifi.ssid, data.wifi.password);
   uint32_t notConnectedCounter = 0;
   while (WiFi.status() != WL_CONNECTED)
   {
@@ -216,15 +244,15 @@ void wifiConnect(){
     { // Reset board if not connected after 5s
       println("Resetting due to Wifi not connecting...");
 
-      data.wifiConnectTry += 1;
-      if(data.wifiConnectTry == 100)
-        data.wifiAP = true;
-      memory.updateNow();
-
-      restart();
+      data.params.wifiConnectTry += 1;
+      if(data.params.wifiConnectTry >= 12){
+        data.params.wifiAP = true;
+        memory.updateNow();
+        restart();
+      }
     }
   }
-
+  
   WiFi.setAutoReconnect(true);
   WiFi.persistent(true);
   print("Wifi connected, IP address: ");
@@ -234,7 +262,7 @@ void wifiConnect(){
 void factoryReset(){
   println("Factory reset");
   memory.reset();
-  data.factoryReset = true;
+  data.params.factoryReset = true;
   memory.updateNow();
   restart();
 }

@@ -4,40 +4,64 @@
 #include <GyverPortal.h>
 #include <EEManager.h>
 #include <DS18B20.h>
+#include <ESP8266WiFi.h>
+#include <espnow.h>
 
 
-String version = "0.0.33";
+
+String sw_version = "0.3.6";
+String release_date = "31.01.2024";
 #define LIGHT_THEME 0
 #define DARK_THEME 1
 #define ONE_WIRE_BUS 2 //Для ESP01
 //#define ONE_WIRE_BUS D2 //Для wemos mini
 
-struct Data {
-  //Data
-  char tempLabel[32] = "Temperature";
-  char device_name[32] = "temp_sensor";
-  int sensorRefreshTime = 10;
-
-  bool factoryReset = true;
-  byte wifiConnectTry = 0;
-  bool wifiAP;
-  int  theme = DARK_THEME;
-  // WiFi
-  char ssid[32];
-  char password[32];
+struct Mqtt{
   //MQTT
   char mqttServerIp[32];
   short mqttServerPort = 1883;
   char mqttUsername[32];
   char mqttPassword[32];
-  //Delay before send message in seconds
-  int status_delay = 10;
-  int avaible_delay = 60;
+  //Period of sending message in seconds
+  int status_period = 10;
+  int avaible_period = 60;
   //MQTT Topic
   char discoveryTopic[100] = "homeassistant/sensor/temp_sensor/config";
   char commandTopic[100]   = "homeassistant/sensor/temp_sensor/set";
   char avaibleTopic[100]   = "homeassistant/sensor/temp_sensor/avaible";
   char stateTopic[100]     = "homeassistant/sensor/temp_sensor/state";
+};
+
+struct Wifi{
+    // WiFi
+  char ssid[32];
+  char password[32];
+};
+
+struct Parameters{
+  bool factoryReset = true;
+  byte wifiConnectTry = 0;
+  bool wifiAP;
+  int  theme = DARK_THEME;
+};
+
+struct SensorData{
+  char tempLabel[32] = "Temperature";
+  char device_name[32] = "temp_sensor";
+  int sensorRefreshTime = 10;
+};
+
+struct ESPNowData{
+  bool enable = false;
+  char broadcastAddress[13] = "FFFFFFFFFFFF";
+};
+
+struct Data {
+  SensorData sensor;
+  Parameters params;
+  Wifi wifi;
+  Mqtt mqtt;
+  ESPNowData EspNow;
 };
 
 #define WIFIAPTIMER 300000
@@ -59,6 +83,7 @@ struct Form{
   const char* preferences = "/config/preferences";
   const char* WiFiConfig ="/config/wifi_config";
   const char* mqttConfig = "/config/mqtt_config";
+  const char* ESPNowPreferences = "/config/ESPNowPreferences";
   const char* factoryReset = "/config/factory_reset";
   const char* firmwareUpgrade = "/ota_update";
 };

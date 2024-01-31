@@ -19,7 +19,7 @@ void onConnectionEstablished() {
   SendDiscoveryMessage();
   SendAvailableMessage("online");
 
-  mqttClient.subscribe(data.commandTopic, [] (const String &payload)  {
+  mqttClient.subscribe(data.mqtt.commandTopic, [] (const String &payload)  {
     println("MQTT received command topic");
     //.....
   });
@@ -33,7 +33,7 @@ void publish() {
   doc["temperature"] = getTemperature();
   doc["WiFiRSSI"] = WiFi.RSSI();
   serializeJson(doc, buffer);
-  mqttClient.publish(data.stateTopic, buffer, false);
+  mqttClient.publish(data.mqtt.stateTopic, buffer, false);
 }
 
 void SendDiscoveryMessage( ){
@@ -41,45 +41,41 @@ void SendDiscoveryMessage( ){
   DynamicJsonDocument doc(1024);
   char buffer[1024];
 
-  String device_name = data.device_name;
+  String device_name = data.sensor.device_name;
 
-  doc["name"]         = data.device_name;
+  doc["name"]         = data.sensor.device_name;
   doc["uniq_id"]      = "ESP_"+device_name;
   doc["object_id"]    = "ESP_"+device_name;
   doc["ip"]           = WiFi.localIP().toString();
   doc["mac"]          = WiFi.macAddress();
-  doc["avty_t"]       = data.avaibleTopic;
+  doc["avty_t"]       = data.mqtt.avaibleTopic;
   doc["pl_avail"]     = "online";
   doc["pl_not_avail"] = "offline";
-  doc["stat_t"]       = data.stateTopic;;
+  doc["stat_t"]       = data.mqtt.stateTopic;;
   doc["dev_cla"]      = "temperature";
   doc["val_tpl"]      = "{{ value_json.temperature|default(0) }}";
   doc["unit_of_meas"] = "°C";
 
   JsonObject device = doc.createNestedObject("device");
-  device["name"]         = data.tempLabel;
+  device["name"]         = data.sensor.tempLabel;
   device["model"]        = device_name;
   device["configuration_url"] = "http://"+WiFi.localIP().toString();
   device["manufacturer"] = "WhiteFootCompany";
-  device["sw_version"]   = version;
+  device["sw_version"]   = sw_version;
   JsonArray identifiers = device.createNestedArray("identifiers");
   identifiers.add(WiFi.macAddress());
 
   serializeJson(doc, buffer);
-  mqttClient.publish(data.discoveryTopic, buffer, true);
+  mqttClient.publish(data.mqtt.discoveryTopic, buffer, true);
 }
 
 void SendAvailableMessage(const String &mode = "online"){
   println("MQTT publish avaible message");
-  mqttClient.publish(data.avaibleTopic, mode, false);
+  mqttClient.publish(data.mqtt.avaibleTopic, mode, true);
 }
 
 void mqttPublish() {
   if (mqttClient.isConnected() && MessageTimer.tick()) {
     publish();
-  }
-
-  if (mqttClient.isConnected() && ServiceMessageTimer.tick()) {
-    SendAvailableMessage();
   }
 }
