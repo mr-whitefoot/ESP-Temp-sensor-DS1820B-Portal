@@ -9,8 +9,8 @@
 
 
 
-String sw_version = "0.3.6";
-String release_date = "31.01.2024";
+String sw_version = "0.3.7";
+String release_date = "04.02.2024";
 #define LIGHT_THEME 0
 #define DARK_THEME 1
 #define ONE_WIRE_BUS 2 //Для ESP01
