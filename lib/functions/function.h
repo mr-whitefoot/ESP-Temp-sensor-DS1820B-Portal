@@ -191,6 +191,12 @@ void portalStart(){
   portal.enableOTA();
 }
 
+void wifiRestart(){
+  data.params.wifiAP = false;
+  memory.updateNow();
+  restart();
+}
+
 void wifiAp(){
   println("Create AP");
 
@@ -208,7 +214,7 @@ void wifiAp(){
 
   WiFiApTimer.setTime(WIFIAPTIMER);
   WiFiApTimer.setTimerMode();
-  WiFiApTimer.attach(restart);
+  WiFiApTimer.attach(wifiRestart);
   WiFiApTimer.start();
 
   onSoftAPModeStationConnected = WiFi.onSoftAPModeStationConnected([](const WiFiEventSoftAPModeStationConnected& event)
